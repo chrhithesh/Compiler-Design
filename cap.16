@@ -1,0 +1,55 @@
+%{
+#include <stdio.h>
+#include <string.h>
+
+int char_count = 0;
+int line_count = 0;
+int word_count = 0;
+%}
+
+/* Regular definitions */
+WS          [ \t]+
+NEWLINE     \n
+COMMENT1    \/\/[^\n]*
+COMMENT2    \/\*([^*]|\*+[^*/])*\*+\/
+IDENT       [a-zA-Z_][a-zA-Z0-9_]*
+NUMBER      [0-9]+
+STRING      \"([^\\\"]|\\.)*\"
+OP          [+\-*/=<>!&|%^]+
+PUNCT       [;:,.(){}[\]]
+
+%%
+
+{COMMENT1}      ;   /* Ignore single-line comments */
+{COMMENT2}      ;   /* Ignore multi-line comments */
+{WS}            ;   /* Ignore spaces and tabs */
+{NEWLINE}       { line_count++; }
+{STRING}        { char_count += yyleng; word_count++; }
+{IDENT}         { char_count += yyleng; word_count++; }
+{NUMBER}        { char_count += yyleng; word_count++; }
+{OP}            { char_count += yyleng; word_count++; }
+{PUNCT}         { char_count += yyleng; word_count++; }
+
+.               { char_count += yyleng; } /* Count any other character */
+
+%%
+
+int main(int argc, char *argv[])
+{
+    if (argc > 1)
+        yyin = fopen(argv[1], "r");
+    else {
+        printf("Usage: %s <source.c>\n", argv[0]);
+        return 1;
+    }
+
+    yylex();
+    printf("\nNumber of characters: %d\n", char_count);
+    printf("Number of lines: %d\n", line_count);
+    printf("Number of words: %d\n", word_count);
+
+    fclose(yyin);
+    return 0;
+}
+
+int yywrap() { return 1; }

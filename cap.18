@@ -1,0 +1,43 @@
+%{
+#include <stdio.h>
+#include <string.h>
+
+int macro_count = 0;
+int header_count = 0;
+%}
+
+/* Patterns */
+MACRO      \#define[ \t]+[a-zA-Z_][a-zA-Z0-9_]*
+HEADER     \#include[ \t]*\<[a-zA-Z0-9_\.]+\.h\>
+HEADER2    \#include[ \t]*\"[a-zA-Z0-9_\.]+\.h\"
+
+%%
+
+{MACRO}        { macro_count++; }
+{HEADER}       { header_count++; }
+{HEADER2}      { header_count++; }
+
+/* Ignore everything else */
+.|\n           ;
+
+%%
+
+int main(int argc, char *argv[])
+{
+    if (argc > 1)
+        yyin = fopen(argv[1], "r");
+    else {
+        printf("Usage: %s <source.c>\n", argv[0]);
+        return 1;
+    }
+
+    yylex();
+
+    printf("\nNumber of macros defined: %d\n", macro_count);
+    printf("Number of header files included: %d\n", header_count);
+
+    fclose(yyin);
+    return 0;
+}
+
+int yywrap() { return 1; }
